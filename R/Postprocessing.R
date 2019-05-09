@@ -379,23 +379,19 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
 
     # Manhattan
     output$manhattan <- plotly::renderPlotly({
-      plotly::ggplotly(p = p,tooltip = c("y", "label","x","text"))
+      plotly::ggplotly(p = p,tooltip = c("y", "label","x","text"), source='man')
     })
     
     #When clicked: query Ensembl
     if(!is.null(species)){
       output$event <- shiny::renderPrint({
-        f <- plotly::event_data("plotly_click")
+        f <- plotly::event_data("plotly_click",source='man')
         if (is.null(f)) {
           "Select a point!" 
         }else {
-          if(length(chromo)>1 | chromo=='all'){
-            selectSNP=subset[which(subset$pos+subset$maxPos==f$x),c('pos','chr')]
-          } else {
-            selectSNP=subset[which(subset$pos==f$x),c('pos','chr')]
-          }
-          selectBP=selectSNP[1]$pos
-          selectCHR=selectSNP[1]$chr
+          selectSNP=subset[which(subset$xcoord==f$x),c('pos','chr')]
+          selectBP=selectSNP[1,]$pos
+          selectCHR=selectSNP[1,]$chr
           #Query ensembl database to get nearby genes
           #c=tryCatch({biomaRt::getBM(attributes=c('chromosome_name','ensembl_gene_id','wikigene_name','start_position','end_position','description'), filters=c("chromosome_name","start","end"), values=list(selectCHR,selectBP-pass,selectBP+pass), mart=ensembl)}, error=function(e){"no gene found!"})
           #c
@@ -415,16 +411,12 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
       #When clicked: query Ensembl VCE to get the variant consequence
       if(!is.null(species)){
         output$event4 <- shiny::renderPrint({
-          f <- plotly::event_data("plotly_click")
+          f <- plotly::event_data("plotly_click", source='man')
           if (is.null(f)) {
             "Select a point!" 
           }else {
-            if(length(chromo)>1 | chromo=='all'){
-              selectSNP=subset[which(subset$pos+subset$maxPos==f$x),c('pos','chr')]
-            } else {
-              selectSNP=subset[which(subset$pos==f$x),c('pos','chr')]
-            }
-            selectSNP=selectSNP[1]
+            selectSNP=subset[which(subset$xcoord==f$x),c('pos','chr')]
+            selectSNP=selectSNP[1,]
             server <- "https://rest.ensembl.org"
             #Get reference allele from gds
             snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
@@ -444,16 +436,12 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
     
     #When clicked: give position of SNP
     output$event2<- shiny::renderPrint({
-      f <- plotly::event_data("plotly_click")
+      f <- plotly::event_data("plotly_click", source='man')
       if (is.null(f)) {
         "Select a point!" 
       }else {
-        if(length(chromo)>1 | chromo=='all'){
-          selectSNP=subset[which(subset$pos+subset$maxPos==f$x),c('chr','pos','snp')]
-        } else {
-          selectSNP=subset[which(subset$pos==f$x),c('chr','pos','snp')]
-        }
-        selectSNP=selectSNP[1]
+        selectSNP=subset[which(subset$xcoord==f$x),c("chr", "pos", "snp")]
+        selectSNP=selectSNP[1,]
         infoOutput=data.frame('snp'=selectSNP$snp, 'chr'=selectSNP$chr, 'BP'=selectSNP$pos)
         infoOutput
       }
@@ -461,17 +449,13 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
     
     #When clicked: get all marker in output of same SNP
     output$event3<- shiny::renderPrint({
-      f <- plotly::event_data("plotly_click")
+      f <- plotly::event_data("plotly_click", source='man')
       if (is.null(f)) {
         "Select a point!" 
       }else {
-        if(length(chromo)>1 | chromo=='all'){
-          selectSNP=subset[which(subset$pos+subset$maxPos==f$x),'snp']
-        } else {
-          selectSNP=subset[which(subset$pos==f$x),'snp']
-        }
+        selectSNP=subset[which(subset$xcoord==f$x),'snp']
         selectSNP=selectSNP[1]
-        otherVar=sambadaOutput[sambadaOutput$snp==selectSNP$snp,]
+        otherVar=sambadaOutput[sambadaOutput$snp==selectSNP,]
         otherVar=data.frame('Marker'=otherVar$Marker, 'Var'=otherVar$Env_1, 'p/q-value'=otherVar[[valueName]])
         otherVar
       }
@@ -480,7 +464,7 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
     #Map
     if(!is.null(x)){
       output$map <- plotly::renderPlotly({
-        g <- plotly::event_data("plotly_click")
+        g <- plotly::event_data("plotly_click", source='man')
         if(is.null(g)) {
           plotly::plot_ly(type='scatter', mode='markers')
         } else{ 
@@ -490,12 +474,8 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
           popCol=envData[,popStrCol]
           ID=envData[,IDCol]
           # Get marker and snp
-          if(length(chromo)>1 | chromo=='all'){
-            selectSNP=subset[which(subset$pos+subset$maxPos==g$x),c('chr','pos','Marker')]
-          } else {
-            selectSNP=subset[which(subset$pos==g$x),c('chr','pos','Marker')]
-          }
-          selectSNP=selectSNP[1]
+          selectSNP=subset[which(subset$xcoord==g$x),c('chr','pos','Marker')]
+          selectSNP=selectSNP[1,]
           #Retrieve genotype
           snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
           
@@ -538,19 +518,15 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
     
     #When clicked shows boxplot
     output$boxplot <- shiny::renderPlot({
-      g <- plotly::event_data("plotly_click")
+      g <- plotly::event_data("plotly_click", source='man')
       if(is.null(g)) {
         #plotly::plot_ly(type='scatter', mode='markers')
       } else{
         varenv=envData[,varEnv]
         popCol=envData[,popStrCol]
         # Get marker and snp
-        if(length(chromo)>1 | chromo=='all'){
-          selectSNP=subset[which(subset$pos+subset$maxPos==g$x),c('chr','pos','Marker')]
-        } else {
-          selectSNP=subset[which(subset$pos==g$x),c('chr','pos','Marker')]
-        }
-        selectSNP=selectSNP[1]
+        selectSNP=subset[which(subset$xcoord==g$x),c('chr','pos','Marker')]
+        selectSNP=selectSNP[1,]
         #Retrieve genotype
         snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
         pres=genoToMarker(gds_obj, selectSNP$Marker)

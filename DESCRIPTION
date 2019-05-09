@@ -1,8 +1,8 @@
 Package: R.SamBada
 Type: Package
 Title: Processing Pipeline for 'SamBada' from Pre- To Post-Processing
-Version: 0.1.0
-Date: 2019-03-18
+Version: 0.1.1
+Date: 2019-05-07
 Author: Solange Duruz, Sylvie Stucki, Oliver Selmoni, Elia Vajana
 Maintainer: Solange Duruz <solange.duruz@alumni.epfl.ch>
 Description: Processing pipeline for 'SamBada' from pre- to post-processing. 
@@ -21,6 +21,6 @@ Suggests: Rcpp, utils, data.table, shiny, plotly, httr, biomaRt,
         gdalUtils, rworldmap, doParallel, foreach, knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-04-11 11:35:30 UTC; Solange
+Packaged: 2019-05-09 10:11:08 UTC; Solange
 Repository: CRAN
-Date/Publication: 2019-04-12 08:52:40 UTC
+Date/Publication: 2019-05-09 10:50:02 UTC

@@ -108,6 +108,9 @@ sambadaParallel = function(genoFile, envFile, idGeno, idEnv, outputFile, dimMax=
     if(!(shapeFile %in% c('YES','NO'))) stop("shapeFile should be either YES or NO")    
   }
 
+  #Check if sambada is installed
+  tryCatch(suppressWarnings(system('sambada', intern=TRUE, show.output.on.console=FALSE, ignore.stdout=TRUE, ignore.stderr=TRUE)), error=function(e){stop("sambada is not available. You should first download sambada and either put the binary folder to the path environmental variable or specify the path in the directory input argument")})
+  
   
   ### Load required libraries if cores=NULL or cores>1
   if(is.null(cores)){
@@ -125,6 +128,7 @@ sambadaParallel = function(genoFile, envFile, idGeno, idEnv, outputFile, dimMax=
       stop("Package \"foreach\" needed for this function to work. Please install it.", call. = FALSE)
     }
   }
+  
   requireNamespace('doParallel')
   
   ### Open genofile to count number of mark and indiv

@@ -80,6 +80,9 @@ prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThre
   if(!is.null(directory)){
     changePath(directory)
   }
+  
+  #Check if recode-plink is available
+  tryCatch(suppressWarnings(system('recode-plink', intern=TRUE, show.output.on.console=FALSE, ignore.stdout=TRUE, ignore.stderr=TRUE)), error=function(e){stop("sambada's recode-plink is not available. You should first download sambada and either put the binary folder to the path environmental variable or specify the path in the directory input argument")})
 
   ### If ped file with no filters => no need to code to GDS ###
   
@@ -362,6 +365,8 @@ setLocation=function(){
 
 #' @title Create env file from raster file(s) and/or global database present in the raster r package
 #' @description Create env file as an input for SamBada (it is recommended to run prepare_env function before running samBada) raster file(s) and/or global database present in the raster r package
+#' @details  If you set worldclim=TRUE, then tmin10 represents the minimum temperature in october. Similarly tmax, tavg and prec refers to maximum temperature, average temperature and precipitation. The bio1-bio19 are bioclim variables are computed from these indices and are described here. Temperature are given in 10 degree C and precipitation in mm. The funciton always downloads the best resolution available (30 seconds for worldclim dataset and 90m for SRTM).
+#' This function requires that you define the EPSG code of your projection system. If you work with lat/long global projection, then you most probably work with WGS 84 whose EPSG is 4326.
 #' @author Solange Duruz
 #' @param locationFileName char Name of the file containing location of individuals. Must be in the active directory. Supported extension are .csv, .shp. All columns present in this file will also be present in the output file
 #' @param outputFile char Name of the output file. Must have a .csv extension.
@@ -725,6 +730,7 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
 
 #' @title Prepare environmental input
 #' @description Writes a new environmental file that sambada can work with after having removed too correlated variables. Also calculates population structure from a PCA in SNPRelate and add it at the end of the environmental file
+#' @details The population structure is calculated as a PCA of all the SNPs that pass the filtering (maf, ld, missingness). You can either choose to use the score of the X first components to evaluate the population structure (set `numPop` to NULL) or you can compute a "membership coefficient" to a cluster of individuals based on the scores on the first X components. You can choose between two clustering algorithm (k-means or hierarchical cluster in the `clustMethod` argument). One of the option to decide the number of PCs that you should keep is to detect a bump in the proportion of variance explained and keep all the PC before the bump.
 #' @author Solange Duruz, Oliver Selmoni
 #' @param envFile char Name of the input environmental file (must be in active directory). Can be .csv or .shp
 #' @param outputFile char Name of the output file. Must have a .csv extension.
