@@ -1,0 +1,75 @@
+| Welcome to Sambada!
+| Copyright (C) 2011-2019 EPFL (Ecole Polytechnique federale de Lausanne)
+| Laboratory of Geographic information systems (LaSIG)
+| Contact: sylvie.stucki@a3.epfl.ch, stephane.joost@epfl.ch
+| Sambada is free software and comes with ABSOLUTELY NO WARRANTY.
+| Please refer to the file AUTHORS for details.
+ 
+Analyse started on: Fri Nov 22 12:02:03 2019
+Program call:
+D:\Program Files\Sambada\08581F~1.3RC\binaries\sambada.exe \
+    C:\Users\Solange\AppData\Local\Temp\RtmpO0F3yU/uganda-subset-mol-param.txt \
+    D:/sambada/R.SamBada/inst/extdata/uganda-subset-env-export.csv \
+    D:/sambada/R.SamBada/inst/extdata/uganda-subset-mol.csv
+Fetching parameter file: C:\Users\Solange\AppData\Local\Temp\RtmpO0F3yU/uganda-subset-mol-param.txt
+Reading parameter file...
+HEADERS
+    Yes
+NUMVARENV
+    17
+NUMMARK
+    28
+NUMINDIV
+    644
+IDINDIV
+    short_name
+    ID_indiv
+STOREY
+    YES
+DIMMAX
+    1
+SAVETYPE
+    END
+    ALL
+Number of environmental variables in file: 17
+Fetching environmental data: D:/sambada/R.SamBada/inst/extdata/uganda-subset-env-export.csv
+Fetching genetic data: D:/sambada/R.SamBada/inst/extdata/uganda-subset-mol.csv
+Headers sizes : 17 28
+SAVETYPE
+all!
+Reading data in D:/sambada/R.SamBada/inst/extdata/uganda-subset-env-export.csv
+Row 0
+Row 100
+Row 200
+Row 300
+Row 400
+Row 500
+Row 600
+Reading data in D:/sambada/R.SamBada/inst/extdata/uganda-subset-mol.csv
+Row 0
+Row 100
+Row 200
+Row 300
+Row 400
+Row 500
+Row 600
+Reading of data completed : 0 s.
+No autocorrelation computation requested
+Detection of selection signatures
+Highest dimension : 1
+List of possible errors : 
+1: exponential divergence
+2: J_info is singular
+3: divergence of beta
+4: maximum number of iterations
+5: monomorphic marker
+6: non-significant parents models
+Start of measurement, 27 iterations expected.
+End of measurement, total time: 0d  0h  0m  1s
+Writing results...
+End of computation.
+Elapsed time : 1 s.
+Writing of results : 0 s.
+ 
+Analyse completed on: Fri Nov 22 12:02:04 2019
+Notice: The option SAVETYPE=SIGNIF is deprecated and will be removed in a future release.

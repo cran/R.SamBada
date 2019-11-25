@@ -9,7 +9,7 @@ prepareGeno(fileName, outputFile, saveGDS, mafThresh = NULL,
   directory = NULL, interactiveChecks = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{fileName}{char Name of the input file (must be in active directory). Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPrelate specific format) will be created unless no filtering options are chosen}
+\item{fileName}{char Name of the input file (must be in active directory). Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPRelate specific format) will be created unless no filtering options are chosen}
 
 \item{outputFile}{char Name of the output file. Must be a .csv}
 
@@ -21,7 +21,7 @@ prepareGeno(fileName, outputFile, saveGDS, mafThresh = NULL,
 
 \item{ldThresh}{double A number between 0 and 1 specifying the linkage disequilibrium (LD) rate filtering (if null no filtering on LD will be computed)}
 
-\item{mgfThresh}{double A number between 0 and 1 specifying the Major Genotype Frequency (MGF) rate filtering (if null no filtering on MGF will be computed). NB: sambada computations rely on genotypes}
+\item{mgfThresh}{double A number between 0 and 1 specifying the Major Genotype Frequency (MGF) rate filtering (if null no filtering on MGF will be computed). NB: sambada computations rely on genotypes. NB2: The code is written in C++ and needs to be compiled on your computer, therefore Rtools is needed if this parameter is not null.}
 
 \item{directory}{char The directory where binaries of sambada are saved. This parameter is not necessary if directory path is permanently stored in the PATH environmental variable or if a function invoking sambada executable (\code{prepareGeno} or \code{sambadaParallel}) has been already run in the R active session.}
 
@@ -33,7 +33,7 @@ prepareGeno(fileName, outputFile, saveGDS, mafThresh = NULL,
 None
 }
 \description{
-Writes a new genomic file that sambada can work with after having applied the selected genomic filtering options. The output file has the same name as the input file but with a .csv extension
+Writes a new genomic file that sambada can work with after having applied the selected genomic filtering options.  For this function you need SamBada to be installed on your computer; if this is not already the case, you can do this with downloadSambada() - for Mac users, please read the details in downloadSambada's documentation. The output file has the same name as the input file but with a .csv extension
 }
 \examples{
 # Example with data from the package
@@ -60,7 +60,7 @@ prepareGeno(gdsFile, outputFile=file.path(tempdir(),'/uganda-subset-mol.csv'),
 # Run prepareGeno with interactiveChecks=TRUE
 prepareGeno(fileName=system.file("extdata", "uganda-subset-mol.ped", package = "R.SamBada"),
      outputFile=file.path(tempdir(),'/uganda-subset-mol.csv'),TRUE, mafThresh=0.05, 
-     missingnessThresh=0.05, mgfThresh=0.8,interactiveChecks=TRUE)
+     missingnessThresh=0.05,interactiveChecks=TRUE)
 }
 }
 \author{

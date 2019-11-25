@@ -4,6 +4,13 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
+## ---- packages, eval=FALSE-----------------------------------------------
+#  install.packages("BiocManager")
+#  BiocManager::install(pkgs=c("SNPRelate","biomaRt")) #if asked, please update packages that needs to be updated
+#  install.packages("R.SamBada", dependencies=c("Depends",
+#        "Imports", "LinkingTo", "Suggests"))
+#  library("R.SamBada")
+
 ## ---- eval=FALSE---------------------------------------------------------
 #  #Load help
 #  ?downloadSambada()
@@ -58,7 +65,6 @@ knitr::opts_chunk$set(
 #  #Warning: the download and processing of raster is both heavy in space and time-consuming
 #  #If you want to save time, you can skip this step continue to the next function
 #  createEnv(locationFileName=locationFile, outputFile=file.path(tempdir(),'uganda-subset-env.csv'), x='longitude',y='latitude',locationProj=4326,separator=';', worldclim=TRUE, saveDownload=TRUE, rasterName=NULL,rasterProj=NULL, interactiveChecks=FALSE) #Also try with interactiveChecks=TRUE
-#  
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  #Loads data
@@ -94,7 +100,7 @@ knitr::opts_chunk$set(
 #  envFile2=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada")
 #  readLines(envFile2, n=20) #View the first 20 line of the environmental file
 #  
-#  #Otherwise, take the one provided in the package
+#  #Locate genoFile in csv format (created with prepareGeno)
 #  genoFile2=system.file("extdata", "uganda-subset-mol.csv", package = "R.SamBada")
 #  readLines(genoFile2, n=20) #View the first 20 line of the genetic file
 #  

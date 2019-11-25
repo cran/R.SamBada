@@ -6,8 +6,9 @@
 \usage{
 createEnv(locationFileName, outputFile, x = NULL, y = NULL,
   locationProj = NULL, separator = ",", worldclim = TRUE,
-  srtm = FALSE, saveDownload, rasterName = NULL, rasterProj = NULL,
-  directory = FALSE, interactiveChecks, verbose = TRUE)
+  resWC = 0.5, srtm = FALSE, saveDownload, rasterName = NULL,
+  rasterProj = NULL, directory = FALSE, interactiveChecks,
+  verbose = TRUE)
 }
 \arguments{
 \item{locationFileName}{char Name of the file containing location of individuals. Must be in the active directory. Supported extension are .csv, .shp. All columns present in this file will also be present in the output file}
@@ -24,9 +25,11 @@ createEnv(locationFileName, outputFile, x = NULL, y = NULL,
 
 \item{worldclim}{logical If TRUE worldclim bio, tmin, tmax and prec variables will be downloaded at a resolution of 0.5 minutes of degree (the finest resolution). Rely rgdal and gdalUtils R package to merge the tiles. The downloaded tiles will be stored in the (new) wc0.5 directory of the active directory}
 
+\item{resWC}{double The resolution at which to download the worldclim tiles. Must be one of 0.5, 2.5, 5, and 10 (minutes of degree). See argument res of raster::getData.}
+
 \item{srtm}{logical If TRUE the SRTM (altitude) variables will be downloaded at a resolution ... Rely rgdal and gdalUtils R package to merge the tiles. The downloaded tiles will be stored in the (new) wc0.5 directory of the active directory}
 
-\item{saveDownload}{logical If TRUE (and if wordclim or srtm is TRUE), the tiles downloaded from global databases will be saved in a non-temporary directory. We recommend setting this parameter to true so that rasters can be used later (post-processing). If wordclim and srtm are FALSE, either value (TRUE/FALSE) will have no effect}
+\item{saveDownload}{logical If TRUE (and if \code{worldclim} or \code{srtm} is TRUE), the tiles downloaded from global databases will be saved in a non-temporary directory. We recommend setting this parameter to true so that rasters can be used later (post-processing). If worldclim and srtm are FALSE, either value (TRUE/FALSE) will have no effect}
 
 \item{rasterName}{char or list Name or list of name of raster files to import. Supported format are the one of raster package. If \code{directory} is TRUE then the path to the directory. Can be set to null if worldclim or srtm are set to TRUE.}
 
@@ -45,8 +48,10 @@ None
 Create env file as an input for SamBada (it is recommended to run prepare_env function before running samBada) raster file(s) and/or global database present in the raster r package
 }
 \details{
-If you set worldclim=TRUE, then tmin10 represents the minimum temperature in october. Similarly tmax, tavg and prec refers to maximum temperature, average temperature and precipitation. The bio1-bio19 are bioclim variables are computed from these indices and are described here. Temperature are given in 10 degree C and precipitation in mm. The funciton always downloads the best resolution available (30 seconds for worldclim dataset and 90m for SRTM).
+If you set worldclim=TRUE, then tmin10 represents the minimum temperature in October. Similarly tmax, tavg and prec refers to maximum temperature, average temperature and precipitation. The bio1-bio19 are bioclim variables are computed from these indices and are described here. Temperature are given in 10 degree C and precipitation in mm. The function always downloads the best resolution available (30 seconds for worldclim dataset and 90m for SRTM).
 This function requires that you define the EPSG code of your projection system. If you work with lat/long global projection, then you most probably work with WGS 84 whose EPSG is 4326.
+
+In order to work, this function needs GDAL to be installed on your machine (requirements of the package rgdal)
 }
 \examples{
 \dontrun{

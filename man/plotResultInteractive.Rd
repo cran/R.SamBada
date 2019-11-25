@@ -6,7 +6,8 @@
 \usage{
 plotResultInteractive(preparedOutput, varEnv, envFile, species = NULL,
   pass = NULL, x = NULL, y = NULL, valueName = "pvalueG",
-  chromo = "all", gdsFile = NULL, IDCol = NULL, popStrCol = NULL)
+  chromo = "all", gdsFile = NULL, IDCol = NULL, popStrCol = NULL,
+  ensemblHost = "www.ensembl.org")
 }
 \arguments{
 \item{preparedOutput}{char The prepared output list from prepare_output function}
@@ -15,7 +16,7 @@ plotResultInteractive(preparedOutput, varEnv, envFile, species = NULL,
 
 \item{envFile}{char The file containing the input environmental variable of sambada.}
 
-\item{species}{char The abbreviated latin name of the species without capitals nor punctuation (e.g. btaurus, chircus,...). Can be set to null if species not present in ensembl database}
+\item{species}{char The abbreviated latin name of the species without capitals nor punctuation (e.g. btaurus, chircus,...). Can be set to null if species not present in ensembl database. !!! Warning !!! This function only works for species for which a SNP dataset is available in ensembl. You can check the list using the following R command: snp_dataset = biomaRt::useMart('ENSEMBL_MART_SNP'); biomaRt::listDatasets(snp_dataset)}
 
 \item{pass}{integer Number of BP around a SNP in which to look for an annotation in Ensembl. Set to null if species is null}
 
@@ -32,12 +33,17 @@ plotResultInteractive(preparedOutput, varEnv, envFile, species = NULL,
 \item{IDCol}{char The name of the column in \code{envFile} corresponding to the ID of the individual. If provided, hover on the output map will give the id of the animal}
 
 \item{popStrCol}{char The name or vector of name of column(s) in \code{envFile} describing population structure. If provided, additional layers on the map will be available representing population structure.}
+
+\item{ensemblHost}{char The ensembl url as defined in biomaRt::useMart. Useful to access archived version of ensembl dataset.}
 }
 \value{
 None
 }
 \description{
 Plots the manhattan plot for a given environmental variable. The plot is interactive and a map of the distribution of the marker can be retrieved as well as nearby genes listed in Ensembl.
+}
+\details{
+This function opens a local web-page first showing a manhattan plot. By clicking on a marker, a list of information is shown (chromosome and exact position, ensembl gene within the determined window, variant consequence on the protein and if the SNP is correlated with other variables). A map also shows the geographical distribution of the marker (presence/absence), the environmental variable and if present the population variable. On the right of the plot, the variable to be plotted can be checked in the list by clicking on it. Also two boxplots shows the distribution of the environmental variables for individuals with and without the marker. The scale of the y-axis is the unit of the environmental variable.
 }
 \examples{
 \dontrun{

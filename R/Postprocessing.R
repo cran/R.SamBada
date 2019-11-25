@@ -6,7 +6,7 @@
 #' @param gdsFile char Name of the gds file associated with sambada's input file. If null, will try with \code{sambadaname}.gds
 #' @param popStr logical Indicates whether sambada was run using the POPSTRVAR parameter (i.e. population structure was taken into account). Default false
 #' @param nrows integer Specifies the number of line to read from the input file. Useful if \code{saveType} 'END ALL' was used in \code{sambadaParallel} and that the number of models run is large so that the reading and processing is too slow. The \code{saveType} 'END' parameter ensures that most significant models are located at the top of the file.
-#' @param interactiveChecks logical If TRUE, plots showing the distribution of p-values and estimates of pi0 (to adjust q-values) will be drawn
+#' @param interactiveChecks logical If TRUE, plots showing the distribution of p-values and estimates of pi0 (to adjust q-values) will be drawn. According to Storey's method to calculate q-values (Storey, J. D. (2003). The positive false discovery rate: a Bayesian interpretation and the q-value. The Annals of Statistics, 31(6), 2013-2035), you need to estimate a pi0 parameter which can be derived from an histogram of p-values. Pi0 correponds to the limit when p-value -> 1. The histogram should reach a plateau with increasing p-value. It this is not the case, q-values might not be the best option to correct for multiple testing.
 #' @return a list containing a) \code{$sambadaOutput} a matrix containing the output from sambada with 3 additional column: corresponding snp, chromosome and position of the marker b) \code{$chrSNPNum} The total number of SNPs in each chromosome c) \code{$chrMaxPos} The highest position found in each chromosome
 #' @examples
 #' # Example with data from the package
@@ -69,15 +69,23 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
   if(is.null(nrows)){
     nrows=Inf
   }
-  output = tryCatch({data.table::fread(paste0(sambadaname,"-Out-",dimMax,".csv"), nrows=nrows, h=T, colClass=c('character', rep('character',dimMax), rep('double', 3), 'integer', rep('double', (9+(dimMax-1)*3))))}, error=function(e){stop(paste0('Cannot open ',sambadaname,'-Out-',dimMax,'.csv. Maybe the format does not correspond to sambadas strandard and you have an unexpected number of columns'))}) 
-  # Check that required columns are present
+  if(popStr==TRUE){
+    output = tryCatch({data.table::fread(paste0(sambadaname,"-Out-",dimMax,".csv"), nrows=nrows, h=T, colClass=c('character', rep('character',dimMax), rep('double', 3), 'integer', rep('double', (10+dimMax))))}, error=function(e){stop(paste0('Cannot open ',sambadaname,'-Out-',dimMax,'.csv. Maybe the format does not correspond to sambadas strandard and you have an unexpected number of columns'))}) 
+  } else {
+    output = tryCatch({data.table::fread(paste0(sambadaname,"-Out-",dimMax,".csv"), nrows=nrows, h=T, colClass=c('character', rep('character',dimMax), rep('double', 3), 'integer', rep('double', (8+dimMax))))}, error=function(e){stop(paste0('Cannot open ',sambadaname,'-Out-',dimMax,'.csv. Maybe the format does not correspond to sambadas strandard and you have an unexpected number of columns'))}) 
+  }
+    # Check that required columns are present
   if(!('WaldScore' %in% colnames(output))) stop("Column WaldScore not present in your outputfile!")
   if(!('Gscore' %in% colnames(output))) stop("Column Gscore not present in your outputfile!")
   if(!('Marker' %in% colnames(output))) stop("Column Marker not present in your outputfile!")
+  if(popStr==TRUE){
+    if(!('GscorePop' %in% colnames(output))) stop("Column GscorePop not present in your outputfile!")
+    if(!('WaldScorePop' %in% colnames(output))) stop("Column WaldScorePop not present in your outputfile!")
+  }
   
   ### calculate p- and q-value: 
   #Read histogram
-  storeyTot=read.table(paste0(sambadaname,'-storey.csv'))
+  storeyTot=data.table::fread(paste0(sambadaname,'-storey.csv'))
 
   #p-value and start of qvalue
   if(popStr==TRUE){
@@ -150,7 +158,7 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
     gdsFile=paste0(sambadaname,'.gds')
   }
   if(!file.exists(gdsFile)){
-    stop("A .gds file from package SNPRelate must exist for this function to work. Please provide it in the argument gdsFile if different from sambadaname. Use function prepare_geno from this package or one of the function of SNPRelate")
+    stop("A .gds file from package SNPRelate must exist for this function to work. Please provide it in the argument gdsFile if different from sambadaname. Use function prepareGeno from this package or one of the function of SNPRelate")
   }
   gds_obj=SNPRelate::snpgdsOpen(gdsFile)
   on.exit(SNPRelate::snpgdsClose(gds_obj))
@@ -192,7 +200,7 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
 #' @param preparedOutput char The prepared output list from prepare_output function
 #' @param varEnv char The name of the environmental variable one wish to study (as in the header of \code{envFile})
 #' @param envFile char The file containing the input environmental variable of sambada. 
-#' @param species char The abbreviated latin name of the species without capitals nor punctuation (e.g. btaurus, chircus,...). Can be set to null if species not present in ensembl database
+#' @param species char The abbreviated latin name of the species without capitals nor punctuation (e.g. btaurus, chircus,...). Can be set to null if species not present in ensembl database. !!! Warning !!! This function only works for species for which a SNP dataset is available in ensembl. You can check the list using the following R command: snp_dataset = biomaRt::useMart('ENSEMBL_MART_SNP'); biomaRt::listDatasets(snp_dataset)
 #' @param pass integer Number of BP around a SNP in which to look for an annotation in Ensembl. Set to null if species is null
 #' @param x char The name of the column corresponding to the x-coordinate in the envFile. Can be set to null if unknown, in this case the maps will not be available
 #' @param y char The name of the column corresponding to the y-coordinate in the env file. Can be set to null if x is null.
@@ -201,6 +209,8 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
 #' @param gdsFile char The GDS file created in the preprocessing of sambada. If null, will try with envFile(without -env.csv or -env-export.csv) and .gds
 #' @param IDCol char The name of the column in \code{envFile} corresponding to the ID of the individual. If provided, hover on the output map will give the id of the animal
 #' @param popStrCol char The name or vector of name of column(s) in \code{envFile} describing population structure. If provided, additional layers on the map will be available representing population structure.
+#' @param ensemblHost char The ensembl url as defined in biomaRt::useMart. Useful to access archived version of ensembl dataset. 
+#' @details This function opens a local web-page first showing a manhattan plot. By clicking on a marker, a list of information is shown (chromosome and exact position, ensembl gene within the determined window, variant consequence on the protein and if the SNP is correlated with other variables). A map also shows the geographical distribution of the marker (presence/absence), the environmental variable and if present the population variable. On the right of the plot, the variable to be plotted can be checked in the list by clicking on it. Also two boxplots shows the distribution of the environmental variables for individuals with and without the marker. The scale of the y-axis is the unit of the environmental variable.
 #' @return None 
 #' @examples
 #' \dontrun{
@@ -230,7 +240,7 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
 #'      IDCol='short_name',popStrCol='pop1')
 #' }
 #' @export
-plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, pass=NULL,x=NULL,y=NULL,  valueName='pvalueG',chromo='all',gdsFile=NULL, IDCol=NULL, popStrCol=NULL){
+plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, pass=NULL,x=NULL,y=NULL,  valueName='pvalueG',chromo='all',gdsFile=NULL, IDCol=NULL, popStrCol=NULL, ensemblHost='www.ensembl.org'){
 
   ### Checks
   #preparedOutput
@@ -286,7 +296,7 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
   chrMaxPos = preparedOutput$chrMaxPos
     
   #Connection to ensembl database
-  ensemblOutput = ensembl_connection(species, TRUE)
+  ensemblOutput = ensembl_connection(species, ensemblHost, TRUE)
   snp = ensemblOutput$snp
   ensembl = ensemblOutput$ensembl
   
@@ -453,11 +463,12 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
       if (is.null(f)) {
         "Select a point!" 
       }else {
-        selectSNP=subset[which(subset$xcoord==f$x),'snp']
-        selectSNP=selectSNP[1]
-        otherVar=sambadaOutput[sambadaOutput$snp==selectSNP,]
+        selectSNP=subset[which(subset$xcoord==f$x),c('Marker','snp')]
+        selectSNP=selectSNP[1,'snp']
+        otherVar=sambadaOutput[which(sambadaOutput$snp==selectSNP[[1]]),]
         otherVar=data.frame('Marker'=otherVar$Marker, 'Var'=otherVar$Env_1, 'p/q-value'=otherVar[[valueName]])
         otherVar
+        #selectSNP[[1]]
       }
     })
     
@@ -474,7 +485,7 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
           popCol=envData[,popStrCol]
           ID=envData[,IDCol]
           # Get marker and snp
-          selectSNP=subset[which(subset$xcoord==g$x),c('chr','pos','Marker')]
+          selectSNP=subset[which(subset$xcoord==g$x),c('chr','pos','Marker','snp')] #arg!=> 'snp'
           selectSNP=selectSNP[1,]
           #Retrieve genotype
           snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
@@ -485,7 +496,7 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
           # snp2 = gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "genotype"), start=c(1,snp_id+1), count=c(-1,1))
           # SNPRelate::snpgdsLDpair(snp1, snp2, method = "corr")
           
-          geno=SNPRelate::snpgdsGetGeno(gds_obj, snp.id=snp_id)
+          geno=tryCatch(SNPRelate::snpgdsGetGeno(gds_obj, snp.id=snp_id), error=function(e){return(SNPRelate::snpgdsGetGeno(gds_obj, snp.id=selectSNP$snp))}) #depending on how gds created snp.id might be number of SNP or name of SNP #arg!=> selectSNP$snp
           pres=genoToMarker(gds_obj, selectSNP$Marker)
           xy=data.frame(x,y,varenv,ID, geno, pres, popCol)
          
@@ -527,11 +538,11 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
         # Get marker and snp
         selectSNP=subset[which(subset$xcoord==g$x),c('chr','pos','Marker')]
         selectSNP=selectSNP[1,]
-        #Retrieve genotype
-        snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
+        #Retrieve genotype #arg!=> commenter
+        #snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.chromosome"))==selectSNP$chr  & gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.position"))==selectSNP$pos)
         pres=genoToMarker(gds_obj, selectSNP$Marker)
         xy=data.frame(varenv, pres, popCol)
-        boxplot(varenv~pres, data=xy)
+        boxplot(varenv~pres, data=xy, xlab="pres/abs", ylab=varEnv)
       }
     })
     
@@ -778,7 +789,8 @@ plotMap = function(envFile, x, y, locationProj,  popStrCol, gdsFile, markerName,
   on.exit(SNPRelate::snpgdsClose(gds_obj))
   if(!is.null(markerName)){
     for(m in 1:length(markerName)){
-      if(length(which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.rs.id"))==substr(markerName[m], 1, nchar(markerName[m])-3)))==0) stop(paste0(markerName[m]," not found in gds"))
+      snpList=tryCatch(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.rs.id")), error=function(e){return(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.id")))}) #Depending on how gds produced, either snp.id or snp.rs.id
+      if(length(which(snpList==substr(markerName[m], 1, nchar(markerName[m])-3)))==0) stop(paste0(markerName[m]," not found in gds. Carefull you must provide a genotype (=snp name + _ + allele combination) not a snp name. For example BTA-73842-no-rs_TT and not BTA-73842-no-rs only"))
     }
   }
   if(sum(mapType %in% c('marker','env','AS','popStr', 'popPieChart'))!=length(mapType)) stop("mapType should be one, or several of, 'marker','env','AS','popStr', 'popPieChart'")
@@ -853,7 +865,7 @@ plotMap = function(envFile, x, y, locationProj,  popStrCol, gdsFile, markerName,
     } 
     numEnv=max(numEnv, numMark)
     
-    if(simultaneous==TRUE & !is.null(saveType)){ #####!!!!!!!!!!!!!!!!!!!!!!!!!############
+    if(simultaneous==TRUE & !is.null(saveType)){ #!#
       if('marker' %in% mapType2 | 'AS' %in% mapType2){
         mapName=paste0(markerName[numMark],'_map.',saveType)
       } else if ('env' %in% mapType2){
@@ -880,45 +892,59 @@ plotMap = function(envFile, x, y, locationProj,  popStrCol, gdsFile, markerName,
         pres=genoToMarker(gds_obj, markerName[numMark])
       }
       #Try to find corresponding raster
-      allowedExtension=c('bil','tif')
-      if(exists('rasterName')) {
-        rm(rasterName)
-      }
+
       if(length(varEnvName)>1){
         varEnvName2=varEnvName[numEnv]
       } else {
         varEnvName2=varEnvName
       }
-      
-      if(regexpr('bio',varEnvName2)>0){
-        if(file.exists(paste0('wc0.5/',varEnvName2,'.tif'))){
-          rasterName=paste0('wc0.5/',varEnvName2,'.tif')
-        }
-      } else if (regexpr('bio',varEnvName2)>0) {
-        if(file.exists(paste0('srtm/',varEnvName2,'.tif'))){
-          rasterName=paste0('srtm/',varEnvName2,'.tif')
+      if(is.null(rasterName)){
+        varEnvName3=varEnvName2
+        allowedExtension=c('bil','tif')
+        if(exists('rasterName2')) {
+          rm(rasterName2)
+        }      
+        if(regexpr('bio',varEnvName2)>0){
+          res=c('0.5','2-5','5','10')
+          ext=c('.tif','.bil')
+          for(a in res){
+            for(b in ext){
+              if(file.exists(paste0('wc',a,'/',varEnvName2,b))){
+                rasterName2=paste0('wc',a,'/',varEnvName2,b)
+              }
+            }
+          }
+          
+        } else if (regexpr('rtm',varEnvName2)>0) {
+          if(file.exists(paste0('srtm/',varEnvName2,'.tif'))){
+            rasterName2=paste0('srtm/',varEnvName2,'.tif')
+          }
+        } else {
+          for(aE in 1:length(allowedExtension))
+            if(file.exists(paste0(varEnvName2,'.',allowedExtension[aE]))){
+              rasterName2=paste0(varEnvName2,'.',allowedExtension[aE])
+              break
+            }
         }
       } else {
-        for(aE in 1:length(allowedExtension))
-          if(file.exists(paste0(varEnvName2,'.',allowedExtension(aE)))){
-            rasterName=paste0(varEnvName2,'.',allowedExtension(aE))
-            break
-          }
+        rasterName2=rasterName
+        varEnvName3=sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(rasterName)) #rasterName without the extension
       }
       #Open raster
-      if(exists('rasterName')){
-        raster=raster::raster(rasterName)
+      if(exists('rasterName2')){
+        raster=raster::raster(rasterName2)
+        #Crop raster to dataset to avoid memory issues
+        raster=raster::crop(raster, raster::extent(envData))
         #Get real raster data
         raster_df=as.data.frame(raster::sampleRegular(raster, size=1e5, asRaster=FALSE), xy=TRUE)
       }
       
       par(mar=c(2,2,2,2), xpd=FALSE)
       #Draw background
-      if(exists('rasterName')){
+      if(exists('rasterName2')){
         #If raster found, put it as background
         #Put coordinates of scattered point or envData???
-        raster::image(raster, asp=1, maxpixels=10000000000,  col=terrain.colors(100),xlim = c(min(envData@coords[,x]), max(envData@coords[,x])), ylim = c(min(envData@coords[,y]), max(envData@coords[,y])))
-        
+        raster::image(raster, asp=1, maxpixels=1000000,  col=terrain.colors(100),xlim = c(min(envData@coords[,x]), max(envData@coords[,x])), ylim = c(min(envData@coords[,y]), max(envData@coords[,y])))
       }else {
         #If raster not found, put countries as background
         country=data('wrld_simpl', package='maptools', envir=environment())
@@ -979,15 +1005,15 @@ plotMap = function(envFile, x, y, locationProj,  popStrCol, gdsFile, markerName,
       }
       
       #Draw legend
-      if(exists('rasterName')){
+      if(exists('rasterName2')){
         #Raster legend
         par(mar=c(2,1,3,2), xpd=NA)
         #raster.pal=colorRampPalette(c("yellow", "orange","red"))( 100 )
         raster.pal=terrain.colors( 100 )
         
         image(1, 1:100, t(seq_along(1:100)), col=raster.pal, axes=FALSE , xlab="", ylab="")
-        axis(4, at=(pretty(raster_df[,varEnvName2])[2:(length(pretty(raster_df[,varEnvName2]))-1)]-min(raster_df[,varEnvName2], na.rm=TRUE))/(max(raster_df[,varEnvName2], na.rm=TRUE)-min(raster_df[,varEnvName2], na.rm=TRUE))*100, labels=pretty(raster_df[,varEnvName2])[2:(length(pretty(raster_df[,varEnvName2]))-1)])
-        text(1,107,varEnvName2)
+        axis(4, at=(pretty(raster_df[,varEnvName3])[2:(length(pretty(raster_df[,varEnvName3]))-1)]-min(raster_df[,varEnvName3], na.rm=TRUE))/(max(raster_df[,varEnvName3], na.rm=TRUE)-min(raster_df[,varEnvName3], na.rm=TRUE))*100, labels=pretty(raster_df[,varEnvName3])[2:(length(pretty(raster_df[,varEnvName3]))-1)])
+        text(1,107,varEnvName3)
       } else {
         plot.new()
         par(mar=c(2,1,3,2), xpd=NA)
@@ -1044,14 +1070,14 @@ plotMap = function(envFile, x, y, locationProj,  popStrCol, gdsFile, markerName,
 
 
 
-ensembl_connection = function(species, interactiveChecks){
+ensembl_connection = function(species, host, interactiveChecks){
   
-  ensembl_dataset = biomaRt::useMart('ensembl')
+  ensembl_dataset = biomaRt::useMart('ensembl', host=host)
   ensembl_dataset=biomaRt::listDatasets(ensembl_dataset)
   dataset_found=ensembl_dataset[grepl(species, ensembl_dataset[,'dataset']),'dataset']
   if(length(dataset_found)==0) stop('Species not found in ensembl database. Either change the name of the species (latin naming e.g. btaurus for cattle) or set it to NULL')
   
-  snp_dataset = biomaRt::useMart('ENSEMBL_MART_SNP')
+  snp_dataset = biomaRt::useMart('ENSEMBL_MART_SNP', host=host)
   snp_dataset=biomaRt::listDatasets(snp_dataset)
   snp_found=snp_dataset[grepl(species, snp_dataset[,'dataset']),'dataset']
   
@@ -1077,8 +1103,9 @@ ensembl_connection = function(species, interactiveChecks){
 genoToMarker = function(gds_obj, selectMarker){
   
   snp_name=substr(selectMarker, 1, nchar(selectMarker)-3)
-  snp_id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.rs.id"))==snp_name)
-  geno=SNPRelate::snpgdsGetGeno(gds_obj, snp.id=snp_id)
+  snp_id=tryCatch(which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.rs.id"))==snp_name),error=function(e){return(which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.id"))==snp_name))}) #arg!=>snp.id
+  #geno=SNPRelate::snpgdsGetGeno(gds_obj, snp.id=snp_id)
+  geno=tryCatch(SNPRelate::snpgdsGetGeno(gds_obj, snp.id=snp_name), error=function(e){return(SNPRelate::snpgdsGetGeno(gds_obj, snp.id=which(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.rs.id"))==snp_name)))})
   allele_comb=substr(selectMarker, nchar(selectMarker)-1, nchar(selectMarker))
   if(substr(allele_comb,1,1)!=substr(allele_comb,2,2)){ #Heterozygote
     geno[geno == 2] <- 0 

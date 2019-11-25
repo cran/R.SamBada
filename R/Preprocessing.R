@@ -1,13 +1,13 @@
 #' @title Prepare genomic input
-#' @description Writes a new genomic file that sambada can work with after having applied the selected genomic filtering options. The output file has the same name as the input file but with a .csv extension
+#' @description Writes a new genomic file that sambada can work with after having applied the selected genomic filtering options.  For this function you need SamBada to be installed on your computer; if this is not already the case, you can do this with downloadSambada() - for Mac users, please read the details in downloadSambada's documentation. The output file has the same name as the input file but with a .csv extension
 #' @author Solange Duruz, Oliver Selmoni
-#' @param fileName char Name of the input file (must be in active directory). Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPrelate specific format) will be created unless no filtering options are chosen
+#' @param fileName char Name of the input file (must be in active directory). Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPRelate specific format) will be created unless no filtering options are chosen
 #' @param outputFile char Name of the output file. Must be a .csv
 #' @param saveGDS logical If true (and if the input file extension is different from GDS) the GDS file will be saved. We recommend to set this parameter to TRUE to save time in subsequent functions that rely on GDS file
 #' @param mafThresh double A number between 0 and 1 specifying the Major Allele Frequency (MAF) filtering (if null no filtering on MAF will be computed)
 #' @param missingnessThresh double A number between 0 and 1 specifying the missing rate filtering (if null no filtering on missing rate will be computed)
 #' @param ldThresh double A number between 0 and 1 specifying the linkage disequilibrium (LD) rate filtering (if null no filtering on LD will be computed)
-#' @param mgfThresh double A number between 0 and 1 specifying the Major Genotype Frequency (MGF) rate filtering (if null no filtering on MGF will be computed). NB: sambada computations rely on genotypes
+#' @param mgfThresh double A number between 0 and 1 specifying the Major Genotype Frequency (MGF) rate filtering (if null no filtering on MGF will be computed). NB: sambada computations rely on genotypes. NB2: The code is written in C++ and needs to be compiled on your computer, therefore Rtools is needed if this parameter is not null.
 #' @param directory char The directory where binaries of sambada are saved. This parameter is not necessary if directory path is permanently stored in the PATH environmental variable or if a function invoking sambada executable (\code{prepareGeno} or \code{sambadaParallel}) has been already run in the R active session.
 #' @param interactiveChecks logical If TRUE, plots will show up showing distribution of allele frequency etc... and the user can interactively change the chosen threshold for \code{mafThresh}, \code{missingnessThresh}, \code{mgfThresh} (optional, default value=FALSE)
 #' @param verbose logical Turn on verbose mode
@@ -37,7 +37,7 @@
 #' # Run prepareGeno with interactiveChecks=TRUE
 #' prepareGeno(fileName=system.file("extdata", "uganda-subset-mol.ped", package = "R.SamBada"),
 #'      outputFile=file.path(tempdir(),'/uganda-subset-mol.csv'),TRUE, mafThresh=0.05, 
-#'      missingnessThresh=0.05, mgfThresh=0.8,interactiveChecks=TRUE)
+#'      missingnessThresh=0.05,interactiveChecks=TRUE)
 #' }
 #' @export
 prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThresh=NULL,ldThresh=NULL,mgfThresh=NULL, directory=NULL, interactiveChecks=FALSE, verbose=FALSE){
@@ -82,8 +82,11 @@ prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThre
   }
   
   #Check if recode-plink is available
-  tryCatch(suppressWarnings(system('recode-plink', intern=TRUE, show.output.on.console=FALSE, ignore.stdout=TRUE, ignore.stderr=TRUE)), error=function(e){stop("sambada's recode-plink is not available. You should first download sambada and either put the binary folder to the path environmental variable or specify the path in the directory input argument")})
-
+  #if(Sys.info()['sysname']=='Windows'){
+    #tryCatch(suppressWarnings(system2('recode-plink', intern=TRUE, show.output.on.console=FALSE, ignore.stdout=TRUE, ignore.stderr=TRUE)), error=function(e){stop("sambada's recode-plink is not available. You should first download sambada and either put the binary folder to the path environmental variable or specify the path in the directory input argument")})
+  #} else {
+  tryCatch(suppressWarnings(system2('recode-plink', wait=TRUE, stdout=FALSE, stderr=FALSE)), error=function(e){stop("sambada's recode-plink is not available. You should first download sambada and either put the binary folder to the path environmental variable or specify the path in the directory input argument")})
+  #}
   ### If ped file with no filters => no need to code to GDS ###
   
   if(extension=='ped' & is.null(mafThresh) & is.null(missingnessThresh) & is.null(mgfThresh) & is.null(ldThresh)){
@@ -100,7 +103,7 @@ prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThre
     close(f)
     
     #recodePlink(numIndiv,numSNP,filename_short,paste(filename_short,'.csv'))
-    system(paste('recode-plink',numIndiv,numSNP,filename_short,outputFile))
+    system2('recode-plink',args=c(numIndiv,numSNP,filename_short,outputFile))
     return(NA)
   }
   
@@ -145,76 +148,78 @@ prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThre
   
   ### Filtering ###
   MGF <- NULL
-  Rcpp::cppFunction("
-    NumericVector MGF(NumericMatrix xx, double maxMGFAllowed){
-      int xrow = xx.nrow() ;
-      int xcol = xx.ncol();
-      int aa;
-      int Aa;
-      int AA;
-      int sum_max;
-      int mgf;
-      NumericVector yy(xcol);
-      NumericVector yybool(xcol);
-      NumericVector yysnpid(xcol);
-      int k=0;
-      for(int i = 0; i < xcol; i++) {
-      aa=0;
-      Aa=0;
-      AA=0;
-      for(int j = 0; j < xrow; j++){
-      if(xx(j,i)==0){
-      aa++;
-      }
-      else if(xx(j,i)==1){
-      Aa++;
-      }
-      else if(xx(j,i)==2){
-      AA++;
-      }
-      }
-      if(aa>=Aa){
-      sum_max=aa;
-      if(AA>aa){
-      sum_max=AA;
-      }
-      }
-      else{
-      if(AA>=Aa){
-      sum_max=AA;
-      }
-      else{
-      sum_max=Aa;
-      }
-      }
-      if(aa+AA+Aa>0){
-      mgf=(sum_max*100)/(aa+Aa+AA);
-      }
-      else{
-      mgf=0;
-      }
-      yy(i)=mgf;
-      if(mgf>maxMGFAllowed*100){
-      yybool(i)=0;
-      
-      }
-      else{
-      yybool(i)=1;
-      yysnpid(k)=i+1;
-      k++;
-      }
-      
-      }
-      
-      //NumericVector yysnpid2(k);
-      //yysnpid2(yysnpid.begin() , yysnpid.begin() + k);
-      if(maxMGFAllowed>=0){
-      return yysnpid;
-      }
-      else{
-      return yy;
-      }
-  }")
+  if(is.null(mgfThresh)==FALSE){
+    Rcpp::cppFunction("
+      NumericVector MGF(NumericMatrix xx, double maxMGFAllowed){
+        int xrow = xx.nrow() ;
+        int xcol = xx.ncol();
+        int aa;
+        int Aa;
+        int AA;
+        int sum_max;
+        int mgf;
+        NumericVector yy(xcol);
+        NumericVector yybool(xcol);
+        NumericVector yysnpid(xcol);
+        int k=0;
+        for(int i = 0; i < xcol; i++) {
+        aa=0;
+        Aa=0;
+        AA=0;
+        for(int j = 0; j < xrow; j++){
+        if(xx(j,i)==0){
+        aa++;
+        }
+        else if(xx(j,i)==1){
+        Aa++;
+        }
+        else if(xx(j,i)==2){
+        AA++;
+        }
+        }
+        if(aa>=Aa){
+        sum_max=aa;
+        if(AA>aa){
+        sum_max=AA;
+        }
+        }
+        else{
+        if(AA>=Aa){
+        sum_max=AA;
+        }
+        else{
+        sum_max=Aa;
+        }
+        }
+        if(aa+AA+Aa>0){
+        mgf=(sum_max*100)/(aa+Aa+AA);
+        }
+        else{
+        mgf=0;
+        }
+        yy(i)=mgf;
+        if(mgf>maxMGFAllowed*100){
+        yybool(i)=0;
+        
+        }
+        else{
+        yybool(i)=1;
+        yysnpid(k)=i+1;
+        k++;
+        }
+        
+        }
+        
+        //NumericVector yysnpid2(k);
+        //yysnpid2(yysnpid.begin() , yysnpid.begin() + k);
+        if(maxMGFAllowed>=0){
+        return yysnpid;
+        }
+        else{
+        return yy;
+        }
+    }")
+  }
   
   if(verbose==TRUE){
     print('Filtering using SNPRelate in process')
@@ -347,7 +352,7 @@ prepareGeno=function(fileName,outputFile,saveGDS,mafThresh=NULL, missingnessThre
   numSNP=length(list_snp)
   numIndiv=length(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "sample.id")))
   #test2::recodePlink(numIndiv,numSNP,paste(filename_short,'_filtered',sep=''),paste0(filename_short,'.csv'))
-  system(paste('recode-plink',numIndiv,numSNP,file.path(tmp,paste(filename_short2,'_filtered',sep='')),outputFile))
+  system2('recode-plink',args=c(numIndiv,numSNP,file.path(tmp,paste(filename_short2,'_filtered',sep='')),outputFile))
 }
 
 #' @title Set the location of samples through a local web-application with interactive map
@@ -365,7 +370,7 @@ setLocation=function(){
 
 #' @title Create env file from raster file(s) and/or global database present in the raster r package
 #' @description Create env file as an input for SamBada (it is recommended to run prepare_env function before running samBada) raster file(s) and/or global database present in the raster r package
-#' @details  If you set worldclim=TRUE, then tmin10 represents the minimum temperature in october. Similarly tmax, tavg and prec refers to maximum temperature, average temperature and precipitation. The bio1-bio19 are bioclim variables are computed from these indices and are described here. Temperature are given in 10 degree C and precipitation in mm. The funciton always downloads the best resolution available (30 seconds for worldclim dataset and 90m for SRTM).
+#' @details  If you set worldclim=TRUE, then tmin10 represents the minimum temperature in October. Similarly tmax, tavg and prec refers to maximum temperature, average temperature and precipitation. The bio1-bio19 are bioclim variables are computed from these indices and are described here. Temperature are given in 10 degree C and precipitation in mm. The function always downloads the best resolution available (30 seconds for worldclim dataset and 90m for SRTM).
 #' This function requires that you define the EPSG code of your projection system. If you work with lat/long global projection, then you most probably work with WGS 84 whose EPSG is 4326.
 #' @author Solange Duruz
 #' @param locationFileName char Name of the file containing location of individuals. Must be in the active directory. Supported extension are .csv, .shp. All columns present in this file will also be present in the output file
@@ -375,13 +380,15 @@ setLocation=function(){
 #' @param separator char The separator used to separate columns in your \code{locationFileName}
 #' @param locationProj integer Coordinate system EPSG code of the \code{locationFileName}. If \code{locationFileName} is already georeferenced, this argument will be skipped. Required if \code{locationFileName} extension is csv.
 #' @param worldclim logical If TRUE worldclim bio, tmin, tmax and prec variables will be downloaded at a resolution of 0.5 minutes of degree (the finest resolution). Rely rgdal and gdalUtils R package to merge the tiles. The downloaded tiles will be stored in the (new) wc0.5 directory of the active directory
+#' @param resWC double The resolution at which to download the worldclim tiles. Must be one of 0.5, 2.5, 5, and 10 (minutes of degree). See argument res of raster::getData.
 #' @param srtm logical If TRUE the SRTM (altitude) variables will be downloaded at a resolution ... Rely rgdal and gdalUtils R package to merge the tiles. The downloaded tiles will be stored in the (new) wc0.5 directory of the active directory
-#' @param saveDownload logical If TRUE (and if wordclim or srtm is TRUE), the tiles downloaded from global databases will be saved in a non-temporary directory. We recommend setting this parameter to true so that rasters can be used later (post-processing). If wordclim and srtm are FALSE, either value (TRUE/FALSE) will have no effect
+#' @param saveDownload logical If TRUE (and if \code{worldclim} or \code{srtm} is TRUE), the tiles downloaded from global databases will be saved in a non-temporary directory. We recommend setting this parameter to true so that rasters can be used later (post-processing). If worldclim and srtm are FALSE, either value (TRUE/FALSE) will have no effect
 #' @param rasterName char or list Name or list of name of raster files to import. Supported format are the one of raster package. If \code{directory} is TRUE then the path to the directory. Can be set to null if worldclim or srtm are set to TRUE.
 #' @param rasterProj integer or list of integer Coordinate system EPSG code of the rasterlayer. If rasterlayer is already georeferenced, this argument will be skipped. If \code{rasterName} is a list, can be either a single number if all projections are the same or a list of projection for all files if different. If \code{directory} is TRUE, can only contain one number (all projections must be equal or rasters must be georeferenced)
 #' @param directory logical If true, all .tif, .gtiff, .img, .sdat, . present in \code{rasterName} will be loaded
 #' @param interactiveChecks logical If TRUE, shows loaded rasters and point locations
 #' @param verbose logical If TRUE, indication on process will be shown
+#' @details In order to work, this function needs GDAL to be installed on your machine (requirements of the package rgdal)
 #' @return None 
 #' @examples
 #' \dontrun{
@@ -396,7 +403,7 @@ setLocation=function(){
 #'       saveDownload=TRUE,interactiveChecks=TRUE)
 #' }
 #' @export
-createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL, separator=',', worldclim=TRUE, srtm=FALSE, saveDownload, rasterName=NULL, rasterProj=NULL,directory=FALSE, interactiveChecks, verbose=TRUE){
+createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL, separator=',', worldclim=TRUE, resWC=0.5, srtm=FALSE, saveDownload, rasterName=NULL, rasterProj=NULL,directory=FALSE, interactiveChecks, verbose=TRUE){
   
   ### Load required library
   
@@ -448,6 +455,7 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
   if(typeof(saveDownload)!='logical') stop("saveDownload is supposed to be logical")
   if(!is.null(worldclim)){
     if(typeof(worldclim)!='logical') stop("worldclim is supposed to be logical")
+    if(!resWC%in%c(0.5, 2.5, 5, 10)) stop("resWC should be one of 0.5, 2.5, 5 or 10")
   }
   if(!is.null(srtm)){
     if(typeof(srtm)!='logical') stop("srtm is supposed to be logical")
@@ -468,6 +476,7 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
   if(locationextension=='csv'){
     if(is.null(x))stop("x must be provided if locationFileName is a .CSV")
     if(is.null(y))stop("y must be provided if locationFileName is a .CSV")
+    
     if(is.null(locationProj))stop("locationProj must be provided if locationFileName is a .CSV")
   }
   
@@ -492,6 +501,9 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
   data=locations
   #Transform locations into a spatial object.! If shapefile
   if(locationextension=='csv'){
+    if(!x%in%names(locations)) stop ('Column specified in x-argurment not present in file')
+    if(!y%in%names(locations)) stop ('Column specified in y-argurment not present in file')
+    if(length(locations[,which(!names(locations)%in%c(x,y))])==0) stop('Besides the x and y column, you must necessarily have a third column in your envFile - typically an ID')
     sp::coordinates(locations) = c(x,y)
   }
   
@@ -583,13 +595,17 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
       long=coord[i,x]
       
       #Download worldclim data (if already downloaded, will not download it twice). Stored in directory wc0.5 of active directory
-      raster=raster::getData("worldclim",var="bio",path=active_dir,res=0.5, lon=long, lat=latt)
-      raster=raster::getData("worldclim",var="tmin",path=active_dir,res=0.5, lon=long, lat=latt)
-      raster=raster::getData("worldclim",var="tmax",path=active_dir,res=0.5, lon=long, lat=latt)
-      raster=raster::getData("worldclim",var="prec",path=active_dir,res=0.5, lon=long, lat=latt)
+      raster=raster::getData("worldclim",var="bio",path=active_dir,res=resWC, lon=long, lat=latt)
+      raster=raster::getData("worldclim",var="tmin",path=active_dir,res=resWC, lon=long, lat=latt)
+      raster=raster::getData("worldclim",var="tmax",path=active_dir,res=resWC, lon=long, lat=latt)
+      raster=raster::getData("worldclim",var="prec",path=active_dir,res=resWC, lon=long, lat=latt)
     }
-    
-    setwd(paste0(active_dir,'/wc0.5'))
+    if(resWC==2.5){
+      resDir='2-5'
+    } else {
+      resDir=as.character(resWC)
+    }
+    setwd(paste0(active_dir,'/wc',resDir))
     
     for(i in 1:19){ #Loop on number of bio
       
@@ -600,20 +616,25 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
       
     }
     var= c('tmin','tmax','prec')
-    for(v in 1:length(var)){
-      for(i in 1:12){ #Loop on number of bio
-        
-        #Search all raster files of biox
-        files=list.files(pattern = paste0(var[v],i,'_[0-9]*\\.bil'))
-        #merge them using library gdalUtils
-        gdalUtils::mosaic_rasters(files, paste0(var[v],i,'.tif'), gdalwarp_index=NULL,gdalwarp_params=list(t_srs='+proj=longlat +datum=WGS84',s_srs='+proj=longlat +datum=WGS84'),verbose=FALSE)
-        
+    if(resWC==0.5){
+      for(v in 1:length(var)){
+        for(i in 1:12){ #Loop on number of bio
+          
+          #Search all raster files of biox
+          files=list.files(pattern = paste0(var[v],i,'_[0-9]*\\.bil'))
+          #merge them using library gdalUtils
+          gdalUtils::mosaic_rasters(files, paste0(var[v],i,'.tif'), gdalwarp_index=NULL,gdalwarp_params=list(t_srs='+proj=longlat +datum=WGS84',s_srs='+proj=longlat +datum=WGS84'),verbose=FALSE)
+          
+        }
       }
+      ext='.tif'
+    } else {
+      ext='.bil'
     }
     
-    file_vector=paste0('bio',1:19,'.tif')
+    file_vector=paste0('bio',1:19,ext)
     for(v in 1:length(var)){
-      file_vector=c(file_vector,paste0(var[v],1:12,'.tif'))
+      file_vector=c(file_vector,paste0(var[v],1:12,ext))
     }
     file_vector_short=paste0('bio',1:19)
     for(v in 1:length(var)){
@@ -717,7 +738,7 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
   
   #Export data
   setwd(working_dir)
-  locationfilename_short=substr(locationFileName,1,gregexpr("\\.", locationFileName)[[1]][length(gregexpr("\\.", locationFileName)[[1]])]-1)
+  #locationfilename_short=substr(locationFileName,1,gregexpr("\\.", locationFileName)[[1]][length(gregexpr("\\.", locationFileName)[[1]])]-1)
   
   write.table(data, file=outputFile, append=FALSE,quote=TRUE,sep=" ", dec = ".",row.names=FALSE,col.names=TRUE)
   
@@ -734,10 +755,10 @@ createEnv=function(locationFileName,outputFile, x=NULL,y=NULL,locationProj=NULL,
 #' @author Solange Duruz, Oliver Selmoni
 #' @param envFile char Name of the input environmental file (must be in active directory). Can be .csv or .shp
 #' @param outputFile char Name of the output file. Must have a .csv extension.
-#' @param maxCorr double A number between 0 and 1 specifying the maximum allowable correlation coefficient between environmental files. If above, one of the variables will be deleted
+#' @param maxCorr double A number between 0 and 1 specifying the maximum allowable correlation coefficient between environmental files. If above (in absolute value), one of the variables will be deleted (the kept variable among the two will always be the one that appears first in the environmental file)
 #' @param idName char Name of the id in the environmental file matching the one of \code{genoFile}
 #' @param separator char If \code{envFile} is .csv, the separator character. If file created with create_env, separator is ' '
-#' @param genoFile char (optional) Name of the input genomic file (must be in active directory). If not null, population variable will be calculated from a PCA relying on the SNPRelate package. Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPrelate specific format) will be created
+#' @param genoFile char (optional) Name of the input genomic file (must be in active directory). If not null, population variable will be calculated from a PCA relying on the SNPRelate package. Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPRelate specific format) will be created
 #' @param numPc double If above 1, number of principal components to analyze. If between 0 and 1, automatic detection of number of PC (the program will find the first leap in the proportion of variance where the ratio (difference in variance between PC x and x+1)/(variance of PC x) is greater than \code{numPc}. If 0, PCA and population structure will not be computed: in that case, the \code{genoFile} will only be used to make the sample order in the \code{envFile} match the one of the \code{genoFile} (necessary for sambada's computation). Set it to 0 if \code{genoFile} is null 
 #' @param mafThresh double A number between 0 and 1 specifying the Major Allele Frequency (MAF) filtering when computing PCA (if null no filtering on MAF will be computed)
 #' @param missingnessThresh double A number between 0 and 1 specifying the missing rate filtering when computing PCS(if null no filtering on missing rate will be computed)
@@ -895,7 +916,7 @@ prepareEnv=function(envFile, outputFile, maxCorr, idName, separator=' ',genoFile
   
   env=openEnvData(envFile, separator)
   
-  #Check that includeCol, excludeCol, popStrCol are in the header of the envFile
+  #Check that includeCol, excludeCol, popStrCol, idName are in the header of the envFile
   if(!is.null(includeCol)){
     if(sum(includeCol %in% colnames(env))!=length(includeCol)) stop("Not all includeCol present in envFile")
   }
@@ -909,7 +930,7 @@ prepareEnv=function(envFile, outputFile, maxCorr, idName, separator=' ',genoFile
   if(!is.null(popStrCol)){
     if(sum(popStrCol %in% colnames(env))!=length(popStrCol)) stop("Not all popStrCol present in envFile")
   }
-  
+  if(sum(idName %in% colnames(env))!=1) stop("idName column not in envFile")
   ### Check correlation among variables ###
   
   if(verbose==TRUE){
@@ -981,7 +1002,7 @@ prepareEnv=function(envFile, outputFile, maxCorr, idName, separator=' ',genoFile
       pca=SNPRelate::snpgdsPCA(gds_obj, snp.id=unlist(ld_filtered),maf=mafThresh, missing.rate=missingnessThresh, eigen.cnt = numvect)
     } else {
       numvect=min(length(gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds_obj, "snp.id"))),100)
-      pca=SNPRelate::snpgdsPCA(gds_obj,maf=mafThresh, missing.rate=missingnessThresh, eigen.cnt = numvect)
+      pca=SNPRelate::snpgdsPCA(gds_obj,maf=mafThresh, missing.rate=missingnessThresh, eigen.cnt = numvect, autosome.only = FALSE)
     }
     # Choose best number of PC if numPc<1
     varprop=pca$varprop[1:numvect]
@@ -1156,7 +1177,7 @@ prepareEnv=function(envFile, outputFile, maxCorr, idName, separator=' ',genoFile
   if((!is.null(genoFile) & numPc>0) | !is.null(popStrCol)){
     
     if(verbose==TRUE){
-      print('Checking correlation between kept env variables and population var. If correlation > 70%, the variable will be printed here')
+      print('Checking correlation between kept env variables and population var. If correlation env-pop > 70%, the environmental variable will be printed here')
     }    
     if(!is.null(popStrCol)){
       #If population structure already in env file
@@ -1315,7 +1336,7 @@ redENV = function(ienv, corcutoff=0.7) {
   while(length(listvar)>0) {
     
     C = cor(ienv)[listvar[co],listvar[-co]]  
-    group=names(C[C>corcutoff]) 
+    group=names(C[abs(C)>corcutoff]) 
     
     olist[listvar[co]]=paste(group, collapse = ', ')
     
