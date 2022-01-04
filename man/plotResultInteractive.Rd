@@ -4,10 +4,21 @@
 \alias{plotResultInteractive}
 \title{Interactive plotting of results}
 \usage{
-plotResultInteractive(preparedOutput, varEnv, envFile, species = NULL,
-  pass = NULL, x = NULL, y = NULL, valueName = "pvalueG",
-  chromo = "all", gdsFile = NULL, IDCol = NULL, popStrCol = NULL,
-  ensemblHost = "www.ensembl.org")
+plotResultInteractive(
+  preparedOutput,
+  varEnv,
+  envFile,
+  species = NULL,
+  pass = NULL,
+  x = NULL,
+  y = NULL,
+  valueName = "pvalueG",
+  chromo = "all",
+  gdsFile = NULL,
+  IDCol = NULL,
+  popStrCol = NULL,
+  ensemblHost = "www.ensembl.org"
+)
 }
 \arguments{
 \item{preparedOutput}{char The prepared output list from prepare_output function}

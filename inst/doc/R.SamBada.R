@@ -1,23 +1,23 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- packages, eval=FALSE-----------------------------------------------
+## ---- packages, eval=FALSE----------------------------------------------------
 #  install.packages("BiocManager")
 #  BiocManager::install(pkgs=c("SNPRelate","biomaRt")) #if asked, please update packages that needs to be updated
 #  install.packages("R.SamBada", dependencies=c("Depends",
 #        "Imports", "LinkingTo", "Suggests"))
 #  library("R.SamBada")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Load help
 #  ?downloadSambada()
 #  #Downloads Sambada into the temporary directory
 #  downloadSambada(tempdir())
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #These files are distributed within your package. The system.file will return the full path to them. With your data, you can just use the name of the file, provided the file is in the active directory
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(
 #  #Make sure you ran downloadSambada() before running this command.
 #  prepareGeno(fileName=genoFile,outputFile=file.path(tempdir(),'uganda-subset-mol.csv'),saveGDS=TRUE,mafThresh=0.05, missingnessThresh=0.1,interactiveChecks=FALSE) #Also try with interactiveChecks=TRUE
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Locate file containing only IDs of individuals
 #  #================
 #  idFile=system.file("extdata", "uganda-subset-id.csv", package = "R.SamBada")
@@ -48,7 +48,7 @@ knitr::opts_chunk$set(
 #  setLocation()
 #  #Once the browser opens, you can load the file uganda-subset-id.csv mentioned above
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #These files are distributed within your package. The system.file will return the full path to them. With your data, you can just use the name of the file, provided the file is in the active directory
@@ -66,7 +66,7 @@ knitr::opts_chunk$set(
 #  #If you want to save time, you can skip this step continue to the next function
 #  createEnv(locationFileName=locationFile, outputFile=file.path(tempdir(),'uganda-subset-env.csv'), x='longitude',y='latitude',locationProj=4326,separator=';', worldclim=TRUE, saveDownload=TRUE, rasterName=NULL,rasterProj=NULL, interactiveChecks=FALSE) #Also try with interactiveChecks=TRUE
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #Locate gds file. Note: this file has also been generated from prepareGeno
@@ -93,7 +93,7 @@ knitr::opts_chunk$set(
 #  prepareEnv(envFile=envFile, outputFile=file.path(tempdir(),'uganda-subset-env-export.csv'), maxCorr=0.8, idName='short_name', genoFile=gdsFile, numPc=0.2, mafThresh=0.05, missingnessThresh=0.1, ldThresh=0.2, numPop=NULL, x='longitude', y='latitude', interactiveChecks=FALSE, locationProj=4326 )
 #  #Also try with interactiveChecks=TRUE
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #Locate envFile (created with preapreEnv)
@@ -116,7 +116,7 @@ knitr::opts_chunk$set(
 #  sambadaParallel(genoFile=genoFile2, envFile=envFile2, idGeno='ID_indiv', idEnv='short_name', dimMax=2, cores=2, saveType='END ALL', populationVar='LAST', outputFile=file.path(tempdir(),'uganda-subset-mol'))
 #  
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #You first need to copy the output file of sambadaParallel and prepareGeno into the active directory with the following command
@@ -141,7 +141,7 @@ knitr::opts_chunk$set(
 #  #Also try with interactiveChecks=TRUE
 #  
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #You need to run prepareOutput to run this function
@@ -157,7 +157,7 @@ knitr::opts_chunk$set(
 #  #Warning: the manhattan plot is different from what we are used to see, given the small number of SNPs
 #  
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #You need to run prepareOutput to run this function
@@ -182,7 +182,7 @@ knitr::opts_chunk$set(
 #  #Accepts the Dataset and SNP Data found
 #  #Once the interactive window opens, click on any point of the manhattan plot
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  #Loads data
 #  #================
 #  #You need to run prepareOutput to run this function

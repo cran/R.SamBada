@@ -4,12 +4,28 @@
 \alias{sambadaParallel}
 \title{Run sambada on parallel cores}
 \usage{
-sambadaParallel(genoFile, envFile, idGeno, idEnv, outputFile, dimMax = 1,
-  cores = NULL, wordDelim = " ", saveType = "END BEST 0.05",
-  populationVar = NULL, spatial = NULL, autoCorr = NULL,
-  shapeFile = NULL, colSupEnv = NULL, colSupMark = NULL,
-  subsetVarEnv = NULL, subsetVarMark = NULL, headers = TRUE,
-  directory = NULL, keepAllFiles = FALSE)
+sambadaParallel(
+  genoFile,
+  envFile,
+  idGeno,
+  idEnv,
+  outputFile,
+  dimMax = 1,
+  cores = NULL,
+  wordDelim = " ",
+  saveType = "END BEST 0.05",
+  populationVar = NULL,
+  spatial = NULL,
+  autoCorr = NULL,
+  shapeFile = NULL,
+  colSupEnv = NULL,
+  colSupMark = NULL,
+  subsetVarEnv = NULL,
+  subsetVarMark = NULL,
+  headers = TRUE,
+  directory = NULL,
+  keepAllFiles = FALSE
+)
 }
 \arguments{
 \item{genoFile}{The name of the file in the current directory of genetic information, compliant with samBada's format (use prepareGeno to transform it)}

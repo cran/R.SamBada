@@ -4,12 +4,28 @@
 \alias{prepareEnv}
 \title{Prepare environmental input}
 \usage{
-prepareEnv(envFile, outputFile, maxCorr, idName, separator = " ",
-  genoFile = NULL, numPc = 0.5, mafThresh = NULL,
-  missingnessThresh = NULL, ldThresh = NULL, numPop = -1,
-  clustMethod = "kmeans", includeCol = NULL, excludeCol = NULL,
-  popStrCol = NULL, x, y, locationProj, interactiveChecks = FALSE,
-  verbose = TRUE)
+prepareEnv(
+  envFile,
+  outputFile,
+  maxCorr,
+  idName,
+  separator = " ",
+  genoFile = NULL,
+  numPc = 0.5,
+  mafThresh = NULL,
+  missingnessThresh = NULL,
+  ldThresh = NULL,
+  numPop = -1,
+  clustMethod = "kmeans",
+  includeCol = NULL,
+  excludeCol = NULL,
+  popStrCol = NULL,
+  x,
+  y,
+  locationProj,
+  interactiveChecks = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{envFile}{char Name of the input environmental file (must be in active directory). Can be .csv or .shp}

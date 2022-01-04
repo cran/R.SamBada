@@ -4,11 +4,23 @@
 \alias{createEnv}
 \title{Create env file from raster file(s) and/or global database present in the raster r package}
 \usage{
-createEnv(locationFileName, outputFile, x = NULL, y = NULL,
-  locationProj = NULL, separator = ",", worldclim = TRUE,
-  resWC = 0.5, srtm = FALSE, saveDownload, rasterName = NULL,
-  rasterProj = NULL, directory = FALSE, interactiveChecks,
-  verbose = TRUE)
+createEnv(
+  locationFileName,
+  outputFile,
+  x = NULL,
+  y = NULL,
+  locationProj = NULL,
+  separator = ",",
+  worldclim = TRUE,
+  resWC = 0.5,
+  srtm = FALSE,
+  saveDownload,
+  rasterName = NULL,
+  rasterProj = NULL,
+  directory = FALSE,
+  interactiveChecks,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{locationFileName}{char Name of the file containing location of individuals. Must be in the active directory. Supported extension are .csv, .shp. All columns present in this file will also be present in the output file}

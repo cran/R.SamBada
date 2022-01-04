@@ -4,9 +4,18 @@
 \alias{prepareGeno}
 \title{Prepare genomic input}
 \usage{
-prepareGeno(fileName, outputFile, saveGDS, mafThresh = NULL,
-  missingnessThresh = NULL, ldThresh = NULL, mgfThresh = NULL,
-  directory = NULL, interactiveChecks = FALSE, verbose = FALSE)
+prepareGeno(
+  fileName,
+  outputFile,
+  saveGDS,
+  mafThresh = NULL,
+  missingnessThresh = NULL,
+  ldThresh = NULL,
+  mgfThresh = NULL,
+  directory = NULL,
+  interactiveChecks = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{fileName}{char Name of the input file (must be in active directory). Can be .gds, .ped, .bed, .vcf. If different from .gds, a gds file (SNPRelate specific format) will be created unless no filtering options are chosen}

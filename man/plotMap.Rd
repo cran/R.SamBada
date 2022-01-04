@@ -4,9 +4,22 @@
 \alias{plotMap}
 \title{Plotting of maps}
 \usage{
-plotMap(envFile, x, y, locationProj, popStrCol, gdsFile, markerName,
-  mapType, varEnvName, SAMethod = NULL, SAThreshold = NULL,
-  saveType = NULL, rasterName = NULL, simultaneous = FALSE)
+plotMap(
+  envFile,
+  x,
+  y,
+  locationProj,
+  popStrCol,
+  gdsFile,
+  markerName,
+  mapType,
+  varEnvName,
+  SAMethod = NULL,
+  SAThreshold = NULL,
+  saveType = NULL,
+  rasterName = NULL,
+  simultaneous = FALSE
+)
 }
 \arguments{
 \item{envFile}{char The file containing the input environmental variable of sambada.}
@@ -53,11 +66,18 @@ if(Sys.info()['sysname']=='Windows'){
 #############
 # Run plotMap
 #############
+# Map of environmental variable
+\donttest{
+plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"), 
+     x='longitude', y='latitude', locationProj=4326,  popStrCol='pop1', gdsFile=gdsFile, 
+     markerName='Hapmap28985-BTA-73836_GG', mapType='env', varEnvName='bio1', 
+     simultaneous=FALSE)
+
 plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"), 
      x='longitude', y='latitude', locationProj=4326,  popStrCol='pop1', gdsFile=gdsFile, 
      markerName='Hapmap28985-BTA-73836_GG', mapType='marker', varEnvName='bio1', 
      simultaneous=FALSE)
-\donttest{
+
 # Maps of marker and population structure (two subplot)
 plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"),
      'longitude','latitude', locationProj=4326,  popStrCol='pop1', 

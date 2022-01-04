@@ -4,8 +4,15 @@
 \alias{plotManhattan}
 \title{Manhattan plot}
 \usage{
-plotManhattan(preparedOutput, varEnv, valueName, chromo = "all",
-  saveType = NULL, threshold = NULL, highlight = NULL)
+plotManhattan(
+  preparedOutput,
+  varEnv,
+  valueName,
+  chromo = "all",
+  saveType = NULL,
+  threshold = NULL,
+  highlight = NULL
+)
 }
 \arguments{
 \item{preparedOutput}{char The prepared output list from prepare_output function}

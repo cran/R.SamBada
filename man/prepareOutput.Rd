@@ -4,8 +4,14 @@
 \alias{prepareOutput}
 \title{Prepare output (useful for all postprocessing analysis)}
 \usage{
-prepareOutput(sambadaname, dimMax, gdsFile = NULL, popStr = FALSE,
-  nrows = NULL, interactiveChecks = TRUE)
+prepareOutput(
+  sambadaname,
+  dimMax,
+  gdsFile = NULL,
+  popStr = FALSE,
+  nrows = NULL,
+  interactiveChecks = TRUE
+)
 }
 \arguments{
 \item{sambadaname}{char The name of the genofile without extension name given to sambada (or outputfile of sambada without the ending -Out-Dim.csv)}

@@ -93,15 +93,15 @@ prepareOutput = function(sambadaname, dimMax, gdsFile=NULL, popStr=FALSE, nrows=
     pvalueW=pchisq(getElement(output,'WaldScorePop'), 1, lower.tail=F)
     m=sum(storeyTot[nrow(storeyTot),2:ncol(storeyTot)]) #Number of models
     #calculate lambda for G and Wald score
-    pi_lambdaG=cumsum(t(as.vector(storeyTot[(nrow(storeyTot)-1),2:ncol(storeyTot)])))/(m*(1-t(as.vector(storeyTot[1,2:ncol(storeyTot)]))))
-    pi_lambdaW=cumsum(t(as.vector(storeyTot[nrow(storeyTot),2:ncol(storeyTot)])))/(m*(1-t(as.vector(storeyTot[1,2:ncol(storeyTot)]))))
+    pi_lambdaG=cumsum(t((storeyTot[(nrow(storeyTot)-1),2:ncol(storeyTot)])))/(m*(1-t((storeyTot[1,2:ncol(storeyTot)]))))
+    pi_lambdaW=cumsum(t((storeyTot[nrow(storeyTot),2:ncol(storeyTot)])))/(m*(1-t((storeyTot[1,2:ncol(storeyTot)]))))
   } else {
     pvalueG=pchisq(getElement(output,'Gscore'), 1, lower.tail=F)
     pvalueW=pchisq(getElement(output,'WaldScore'), 1, lower.tail=F)  
     m=sum(storeyTot[(3+(dimMax-1)*4),2:ncol(storeyTot)]) #Number of models
     #calculate lambda for G and Wald score
-    pi_lambdaG=cumsum(t(as.vector(storeyTot[(3+(dimMax-1)*4),2:ncol(storeyTot)])))/(m*(1-t(as.vector(storeyTot[1,2:ncol(storeyTot)]))))
-    pi_lambdaW=cumsum(t(as.vector(storeyTot[(5+(dimMax-1)*4),2:ncol(storeyTot)])))/(m*(1-t(as.vector(storeyTot[1,2:ncol(storeyTot)]))))
+    pi_lambdaG=cumsum(t((storeyTot[(3+(dimMax-1)*4),2:ncol(storeyTot)])))/(m*(1-t((storeyTot[1,2:ncol(storeyTot)]))))
+    pi_lambdaW=cumsum(t((storeyTot[(5+(dimMax-1)*4),2:ncol(storeyTot)])))/(m*(1-t((storeyTot[1,2:ncol(storeyTot)]))))
   }
   #Bonferroni correction
   pvalueG_Bon=pvalueG*m
@@ -296,9 +296,11 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
   chrMaxPos = preparedOutput$chrMaxPos
     
   #Connection to ensembl database
-  ensemblOutput = ensembl_connection(species, ensemblHost, TRUE)
-  snp = ensemblOutput$snp
-  ensembl = ensemblOutput$ensembl
+  if(!is.null(species)){
+    ensemblOutput = ensembl_connection(species, ensemblHost, TRUE)
+    snp = ensemblOutput$snp
+    ensembl = ensemblOutput$ensembl
+  }
   
   #Prepare Manhattan 
   #Only model involving chosen varenv
@@ -389,7 +391,7 @@ plotResultInteractive = function(preparedOutput, varEnv, envFile,species=NULL, p
 
     # Manhattan
     output$manhattan <- plotly::renderPlotly({
-      plotly::ggplotly(p = p,tooltip = c("y", "label","x","text"), source='man')
+      plotly::ggplotly(p = p,tooltip = c("y", "label","x","text"), source='man') #to change: x not necessary. Y=-log10(pval)
     })
     
     #When clicked: query Ensembl
@@ -728,11 +730,18 @@ plotManhattan=function(preparedOutput, varEnv, valueName, chromo='all',saveType=
 #' #############
 #' # Run plotMap
 #' #############
+#' \donttest{
+#' # Map of environmental variable
+#' plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"), 
+#'      x='longitude', y='latitude', locationProj=4326,  popStrCol='pop1', gdsFile=gdsFile, 
+#'      markerName='Hapmap28985-BTA-73836_GG', mapType='env', varEnvName='bio1', 
+#'      simultaneous=FALSE)
+#' 
 #' plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"), 
 #'      x='longitude', y='latitude', locationProj=4326,  popStrCol='pop1', gdsFile=gdsFile, 
 #'      markerName='Hapmap28985-BTA-73836_GG', mapType='marker', varEnvName='bio1', 
 #'      simultaneous=FALSE)
-#' \donttest{
+#' 
 #' # Maps of marker and population structure (two subplot)
 #' plotMap(envFile=system.file("extdata", "uganda-subset-env-export.csv", package = "R.SamBada"),
 #'      'longitude','latitude', locationProj=4326,  popStrCol='pop1', 

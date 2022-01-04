@@ -1,3 +1,8 @@
+# R.SamBada 0.1.3
+
+## Bug fixes
+- prepareOutput: Ensure compatibility with new version of as.vector
+
 # R.SamBada 0.1.2
 
 ## Improvements
